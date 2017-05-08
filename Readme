@@ -1,0 +1,87 @@
+
+     Marcu Denis-George
+     332 CA
+
+                                   Parallel Events Processing
+
+
+  1. Structura claselor:
+
+  	- Clasa Main reprezinta threadul principal. Aici se vor prelucra argumentele
+date programului si se vor porni generatorii de evenimente. Odata adaugate
+evenimente in coada, threadul Main va citi evenimentele si le va da unor workeri
+sa le prelucreze. Sortarea si scrierea rezultatelor in fisiere se vor face tot
+in aceasta clasa dupa ce s-au terminat de prealucrat evenimentele din coada.
+
+    - Clasa MyThread implementeaza un generator de evenimente. Acesta primeste
+fisierul din care trebuie sa citeasca si numarul de evenimente ce vor fi citite.
+Se citeste linie cu linie din fisier si de pe fiecare linie se extrage durata de
+sleep a threadului si evenimentul (tipul si numarul corespunzator). Dupa ce a
+asteptat timpul specificat in fisier, se va adauga evenimentul in coada 
+sincronizata.
+
+    - Clasa Event reprezinta un eveniment si contine tipul si numarul specific
+evenimentului. Tipul este descris de o alta clasa, Type, care este un enum
+(PRRIME, FACT, SQUARE, FIB).
+
+    - Am implementat worker pool folosind ExecutorService, avand atatia workeri
+cate core-uri are procesorul. Un worker este reprezentat prin clasa Worker.
+
+
+
+  2. Detalii implemetare workeri:
+
+     - Evenimentul este de tip FIB - calculam cel mai mare numar pentru care
+valoarea corespunzatoare din sirul fibonacci este mai mica sau egala cu N.
+Daca l-am gasit, atunci il vom adauga in lista de rezultate pentru FIB (se va 
+sincroniza lista), iar daca nu, vom crea un nou task, ce va verifica daca
+pentru numarul urmator, valoarea corespunzatoare din sirul lui fib este mai 
+mica decat N.
+
+     - Evenimentul este de tip FACT - cautam cel mai mare numar care are 
+factorialul mai mic sau egal cu N. Daca l-am gasit, atunci il vom adauga in 
+lista de rezultate pentru FACT (se va sincroniza lista), iar daca nu, vom crea
+un nou task, ce va verifica daca urmatorul numar are factorialul mai mic sau 
+egal cu N.
+
+     - Evenimentul este de tip PRIME - calculam cel mai mare numar prim mai mic
+sau egal cu N. Daca l-am gasit, atunci il vom adauga in lista de rezultate 
+pentru PRIME(se va sincroniza lista), iar daca nu, vom crea un nou task, ce va
+verifica daca urmatorul numar impar mai mic decat cel curent este prim.
+
+     - Evenimentul este de tip SQUARE - calculam cel mai mare numar care are 
+patratul mai mic sau egal cu N. Daca l-am gasit, atunci il vom adauga in lista
+de rezultate pentru SQUARE (se va sincroniza lista), iar daca nu, vom crea un nou
+task, ce va verifica daca numarul urmator este cel cautat.
+
+
+
+   3. Sincronizare - Am folosit doua semafoare si o bariera.
+
+     - Cu ajutorul primului semafor vom contoriza evenimentele adaugate in
+coada. Cand un generator adauga un eveniment in coada, elibereaza semaforul.
+In threadul Main cand se verifica daca mai sunt evenimente in coada, vom avea
+un acquire prin care punem in asteptare threadul daca coada este inca goala.
+Facem acesta din cauza ca poate exista situatia ca la un moment dat coada
+sa fie goala, iar generatorii inca sa genereze evenimente. Astfel s-ar pierde
+din solutii, iar semaforul impiedica acest lucru. 
+
+     - Al doilea semafor este folosit pentru a ne asigura ca workerii au 
+terminat de procesat evenimentele, astfel cand s-au terminat task-urile,
+eliberam semaforul, iar threadul main va putea sorta rezultatele, fara a exista
+problema ca s-au mai adaugat noi rezultate in liste pe parcursul sortarii 
+sau scrierii in fisier.
+
+
+     - Bariera este folosita pentru a astepta toate threadurile sa termine
+citirea evenimentelor. Dupa aceasta avem inca un release la primul semafor,
+avand ca efect anuntarea threadului main ca in coada nu vor mai fi adaugate 
+evenimente. Am folosit aceasta bariera deoarece primul semafor mai avea
+nevoie de un release, pentru ca threadul main sa poata continua verificarea
+conditiei de coada vida (atunci cand s-au epuizat toate evenimentele din coada),
+de aceea eliberarea trebuia data dupa ce toate evenimentele au fost adaugate in
+coada.
+
+
+  Mai multe detalii despre implementare se gasesc in codul surselor. 
+  
